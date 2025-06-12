@@ -21,12 +21,12 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
     // Use form-data package
     const formData = new FormData();
     formData.append('file', fs.createReadStream(audioPath));
-    formData.append('model', 'whisper-1');
+    formData.append('model_id', 'scribe_v1');
 
-    // Send request to OpenAI Whisper API
-    const response = await axios.post('https://api.openai.com/v1/audio/transcriptions', formData, {
+    // Send request to ElevenLabs Speech-to-Text API
+    const response = await axios.post('https://api.elevenlabs.io/v1/speech-to-text', formData, {
       headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'xi-api-key': process.env.ELEVENLABS_API_KEY,
         ...formData.getHeaders(),
       },
     });
@@ -36,7 +36,16 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
 
     res.json({ text: response.data.text });
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error('Transcription error:', error.response?.data || error.message);
+    
+    // Handle specific ElevenLabs error cases
+    if (error.response?.status === 401) {
+      return res.status(401).json({ error: 'Invalid API key' });
+    }
+    if (error.response?.status === 429) {
+      return res.status(429).json({ error: 'Rate limit exceeded. Please try again later.' });
+    }
+    
     res.status(500).json({ error: 'Transcription failed' });
   }
 });

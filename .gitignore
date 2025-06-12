@@ -40,3 +40,9 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# Environment variables
+/backend/.env
+
+# Uploads directory
+/backend/uploads
