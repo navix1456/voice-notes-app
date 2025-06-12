@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -15,7 +15,12 @@ export class AudioRecorderComponent implements OnInit {
   recordingTime = '00:00';
   private timerInterval: any;
 
-  constructor() { }
+  audioBlob: Blob | null = null;
+  transcription: string = '';
+  isTranscribing: boolean = false;
+  error: string = '';
+
+  constructor(private ngZone: NgZone) { }
 
   ngOnInit(): void { }
 
@@ -24,6 +29,9 @@ export class AudioRecorderComponent implements OnInit {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.mediaRecorder = new MediaRecorder(stream);
       this.audioChunks = [];
+      this.audioBlob = null;
+      this.transcription = '';
+      this.error = '';
       
       this.mediaRecorder.ondataavailable = (event) => {
         this.audioChunks.push(event.data);
@@ -34,6 +42,7 @@ export class AudioRecorderComponent implements OnInit {
       this.startTimer();
     } catch (error) {
       console.error('Error accessing microphone:', error);
+      this.error = 'Microphone access denied or not available.';
     }
   }
 
@@ -42,12 +51,39 @@ export class AudioRecorderComponent implements OnInit {
       this.mediaRecorder.stop();
       this.isRecording = false;
       this.stopTimer();
-      
+
       this.mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-        // Here we'll later add the transcription logic
-        console.log('Recording stopped, audio blob created');
+        this.ngZone.run(() => {
+          this.audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+        });
       };
+    }
+  }
+
+  async transcribeAudio() {
+    if (!this.audioBlob) return;
+    this.isTranscribing = true;
+    this.transcription = '';
+    this.error = '';
+
+    const formData = new FormData();
+    formData.append('audio', this.audioBlob, 'recording.wav');
+
+    try {
+      const response = await fetch('http://localhost:5000/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.text) {
+        this.transcription = data.text;
+      } else {
+        this.error = data.error || 'Transcription failed';
+      }
+    } catch (err) {
+      this.error = 'Error connecting to backend';
+    } finally {
+      this.isTranscribing = false;
     }
   }
 

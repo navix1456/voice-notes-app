@@ -39,6 +39,27 @@
             <div class="text-center mt-4">
               <span class="text-2xl font-mono">{{ recordingTime }}</span>
             </div>
+
+            <!-- Transcribe Button -->
+            <div class="flex justify-center mt-4" *ngIf="audioBlob && !isRecording">
+              <button
+                (click)="transcribeAudio()"
+                [disabled]="isTranscribing"
+                class="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                {{ isTranscribing ? 'Transcribing...' : 'Transcribe' }}
+              </button>
+            </div>
+
+            <!-- Transcription Result -->
+            <div *ngIf="transcription" class="mt-6 p-4 bg-blue-50 rounded text-blue-800">
+              <strong>Transcription:</strong>
+              <div>{{ transcription }}</div>
+            </div>
+            <div *ngIf="error" class="mt-6 p-4 bg-red-50 rounded text-red-800">
+              <strong>Error:</strong>
+              <div>{{ error }}</div>
+            </div>
+
           </div>
         </div>
       </div>
