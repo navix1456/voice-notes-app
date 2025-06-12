@@ -1,0 +1,16 @@
+<div class="flex items-center space-x-2 py-1">
+  <input type="checkbox" [checked]="task.completed" (change)="toggleCompleted()"
+    class="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500">
+
+  <ng-container *ngIf="!isEditing">
+    <span [class.line-through]="task.completed" class="flex-grow text-gray-800">{{ task.description }}</span>
+    <button (click)="startEditing()" class="px-2 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300">Edit</button>
+  </ng-container>
+
+  <ng-container *ngIf="isEditing">
+    <input type="text" [(ngModel)]="editedDescription" (keyup.enter)="saveEditing()"
+      class="flex-grow border rounded px-2 py-1 mr-2">
+    <button (click)="saveEditing()" class="px-2 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600">Save</button>
+    <button (click)="cancelEditing()" class="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">Cancel</button>
+  </ng-container>
+</div> 

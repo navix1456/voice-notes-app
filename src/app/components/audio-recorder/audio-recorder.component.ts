@@ -1,10 +1,11 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TaskItemComponent } from '../task-item/task-item.component';
 
 @Component({
   selector: 'app-audio-recorder',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TaskItemComponent],
   templateUrl: './audio-recorder.html',
   styleUrls: ['./audio-recorder.css']
 })
@@ -20,6 +21,9 @@ export class AudioRecorderComponent implements OnInit {
   isTranscribing: boolean = false;
   error: string = '';
 
+  tasks: any[] = [];
+  isConvertingToTasks: boolean = false;
+
   constructor(private ngZone: NgZone) { }
 
   ngOnInit(): void { }
@@ -32,6 +36,7 @@ export class AudioRecorderComponent implements OnInit {
       this.audioBlob = null;
       this.transcription = '';
       this.error = '';
+      this.tasks = [];
       
       this.mediaRecorder.ondataavailable = (event) => {
         this.audioChunks.push(event.data);
@@ -84,6 +89,46 @@ export class AudioRecorderComponent implements OnInit {
       this.error = 'Error connecting to backend';
     } finally {
       this.isTranscribing = false;
+    }
+  }
+
+  async convertToTasks() {
+    if (!this.transcription) {
+      this.error = 'No transcription available to convert to tasks.';
+      return;
+    }
+
+    this.isConvertingToTasks = true;
+    this.error = '';
+    this.tasks = [];
+
+    try {
+      const response = await fetch('http://localhost:5000/convert-to-tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: this.transcription }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        this.tasks = data.tasks;
+      } else {
+        this.error = data.error || 'Failed to convert to tasks.';
+      }
+    } catch (err) {
+      this.error = 'Error connecting to backend for task conversion.';
+      console.error('Error converting to tasks:', err);
+    } finally {
+      this.isConvertingToTasks = false;
+    }
+  }
+
+  onTaskChanged(index: number, updatedTask: any): void {
+    if (index >= 0 && index < this.tasks.length) {
+      this.tasks[index] = updatedTask;
     }
   }
 

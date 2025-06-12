@@ -6,9 +6,14 @@ const axios = require('axios');
 const cors = require('cors');
 const fs = require('fs');
 const FormData = require('form-data');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
 const upload = multer({ dest: 'uploads/' });
+
+// Initialize Google Generative AI
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash"});
 
 app.use(cors());
 app.use(express.json());
@@ -47,6 +52,46 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
     }
     
     res.status(500).json({ error: 'Transcription failed' });
+  }
+});
+
+// New POST endpoint to convert text to tasks using AI
+app.post('/convert-to-tasks', async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'No text provided for task conversion.' });
+    }
+
+    const prompt = `Convert the following text into a structured JSON array of tasks. Each task should have a 'description' field and a 'completed' field (boolean, default to false). If no tasks are clearly identifiable, return an empty array. Do not include any other text or formatting, just the JSON array.\n\nText: "${text}"`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const jsonText = response.text();
+
+    // Remove markdown code block delimiters if present
+    const cleanJsonText = jsonText.replace(/^```json\n/g, '').replace(/\n```$/g, '');
+
+    // Attempt to parse the JSON output from the AI
+    let tasks;
+    try {
+      tasks = JSON.parse(cleanJsonText);
+      // Ensure it's an array, even if the AI sometimes returns a single object
+      if (!Array.isArray(tasks)) {
+        tasks = [tasks];
+      }
+    } catch (parseError) {
+      console.error('Error parsing AI response:', parseError);
+      // If parsing fails, try to recover or return a generic task
+      tasks = [{ description: text, completed: false }]; 
+    }
+
+    res.json({ tasks });
+
+  } catch (error) {
+    console.error('Error converting to tasks:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to convert to tasks.' });
   }
 });
 

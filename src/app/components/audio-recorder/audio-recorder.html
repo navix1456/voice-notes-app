@@ -50,11 +50,30 @@
               </button>
             </div>
 
+            <!-- Convert to Tasks Button -->
+            <div class="flex justify-center mt-4" *ngIf="transcription && !isTranscribing">
+              <button
+                (click)="convertToTasks()"
+                [disabled]="isConvertingToTasks"
+                class="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                {{ isConvertingToTasks ? 'Converting to Tasks...' : 'Convert to Tasks' }}
+              </button>
+            </div>
+
             <!-- Transcription Result -->
             <div *ngIf="transcription" class="mt-6 p-4 bg-blue-50 rounded text-blue-800">
               <strong>Transcription:</strong>
               <div>{{ transcription }}</div>
             </div>
+
+            <!-- Task List Display -->
+            <div *ngIf="tasks.length > 0" class="mt-6 p-4 bg-gray-100 rounded-lg shadow">
+              <h3 class="text-lg font-semibold mb-2">Generated Tasks:</h3>
+              <div *ngFor="let task of tasks; let i = index" class="mb-2">
+                <app-task-item [task]="task" (taskChanged)="onTaskChanged(i, $event)"></app-task-item>
+              </div>
+            </div>
+
             <div *ngIf="error" class="mt-6 p-4 bg-red-50 rounded text-red-800">
               <strong>Error:</strong>
               <div>{{ error }}</div>
