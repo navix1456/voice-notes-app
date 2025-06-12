@@ -72,6 +72,13 @@
               <div *ngFor="let task of tasks; let i = index" class="mb-2">
                 <app-task-item [task]="task" (taskChanged)="onTaskChanged(i, $event)"></app-task-item>
               </div>
+              <div class="flex justify-center mt-4">
+                <button
+                  (click)="clearAllTasks()"
+                  class="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">
+                  Clear All Tasks
+                </button>
+              </div>
             </div>
 
             <div *ngIf="error" class="mt-6 p-4 bg-red-50 rounded text-red-800">

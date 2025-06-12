@@ -26,7 +26,9 @@ export class AudioRecorderComponent implements OnInit {
 
   constructor(private ngZone: NgZone) { }
 
-  ngOnInit(): void { }
+  ngOnInit(): void {
+    this.loadTasksFromLocalStorage(); // Load tasks when component initializes
+  }
 
   async startRecording() {
     try {
@@ -37,6 +39,7 @@ export class AudioRecorderComponent implements OnInit {
       this.transcription = '';
       this.error = '';
       this.tasks = [];
+      this.saveTasksToLocalStorage(); // Save empty array
       
       this.mediaRecorder.ondataavailable = (event) => {
         this.audioChunks.push(event.data);
@@ -48,6 +51,9 @@ export class AudioRecorderComponent implements OnInit {
     } catch (error) {
       console.error('Error accessing microphone:', error);
       this.error = 'Microphone access denied or not available.';
+    } finally {
+      this.isConvertingToTasks = false;
+      this.saveTasksToLocalStorage(); // Save tasks after conversion
     }
   }
 
@@ -129,6 +135,7 @@ export class AudioRecorderComponent implements OnInit {
   onTaskChanged(index: number, updatedTask: any): void {
     if (index >= 0 && index < this.tasks.length) {
       this.tasks[index] = updatedTask;
+      this.saveTasksToLocalStorage(); // Save tasks after individual task change
     }
   }
 
@@ -145,5 +152,32 @@ export class AudioRecorderComponent implements OnInit {
   private stopTimer() {
     clearInterval(this.timerInterval);
     this.recordingTime = '00:00';
+  }
+
+  clearAllTasks(): void {
+    this.tasks = [];
+    localStorage.removeItem('voiceNotesTasks');
+  }
+
+  private loadTasksFromLocalStorage(): void {
+    try {
+      const storedTasks = localStorage.getItem('voiceNotesTasks');
+      if (storedTasks) {
+        this.tasks = JSON.parse(storedTasks);
+      }
+    } catch (e) {
+      console.error('Error loading tasks from local storage:', e);
+      // Optionally, clear invalid data if parsing fails
+      localStorage.removeItem('voiceNotesTasks');
+      this.tasks = [];
+    }
+  }
+
+  private saveTasksToLocalStorage(): void {
+    try {
+      localStorage.setItem('voiceNotesTasks', JSON.stringify(this.tasks));
+    } catch (e) {
+      console.error('Error saving tasks to local storage:', e);
+    }
   }
 }
