@@ -38,8 +38,6 @@ export class AudioRecorderComponent implements OnInit {
       this.audioBlob = null;
       this.transcription = '';
       this.error = '';
-      this.tasks = [];
-      this.saveTasksToLocalStorage(); // Save empty array
       
       this.mediaRecorder.ondataavailable = (event) => {
         this.audioChunks.push(event.data);
@@ -51,9 +49,6 @@ export class AudioRecorderComponent implements OnInit {
     } catch (error) {
       console.error('Error accessing microphone:', error);
       this.error = 'Microphone access denied or not available.';
-    } finally {
-      this.isConvertingToTasks = false;
-      this.saveTasksToLocalStorage(); // Save tasks after conversion
     }
   }
 
@@ -106,7 +101,6 @@ export class AudioRecorderComponent implements OnInit {
 
     this.isConvertingToTasks = true;
     this.error = '';
-    this.tasks = [];
 
     try {
       const response = await fetch('http://localhost:5000/convert-to-tasks', {
@@ -120,7 +114,8 @@ export class AudioRecorderComponent implements OnInit {
       const data = await response.json();
 
       if (response.ok) {
-        this.tasks = data.tasks;
+        this.tasks = [...this.tasks, ...data.tasks];
+        this.saveTasksToLocalStorage();
       } else {
         this.error = data.error || 'Failed to convert to tasks.';
       }
